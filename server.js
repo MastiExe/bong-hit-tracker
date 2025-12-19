@@ -91,7 +91,14 @@ app.post('/api/tap', async (req, res) => {
             .slice(0, 10);
 
         const hitsData = await kv.lrange('hits', 0, 19);
-        const recentHits = hitsData.map(h => JSON.parse(h));
+        const recentHits = hitsData.map(h => {
+            try {
+                return typeof h === 'string' ? JSON.parse(h) : h;
+            } catch (e) {
+                console.error('Error parsing hit data:', e);
+                return null;
+            }
+        }).filter(h => h !== null);
 
         res.json({
             userCount: user.count,
@@ -129,7 +136,14 @@ app.get('/api/stats', async (req, res) => {
             .slice(0, 10);
 
         const hitsData = await kv.lrange('hits', 0, 19);
-        const recentHits = hitsData.map(h => JSON.parse(h));
+        const recentHits = hitsData.map(h => {
+            try {
+                return typeof h === 'string' ? JSON.parse(h) : h;
+            } catch (e) {
+                console.error('Error parsing hit data:', e);
+                return null;
+            }
+        }).filter(h => h !== null);
 
         res.json({
             totalTaps,
