@@ -1,10 +1,8 @@
 const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
+const { kv } = require('@vercel/kv');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'taps.json');
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -16,36 +14,27 @@ function getISTDate() {
     return istTime.toISOString().split('T')[0];
 }
 
-async function loadData() {
-    try {
-        const data = await fs.readFile(DATA_FILE, 'utf8');
-        const parsed = JSON.parse(data);
+async function checkAndResetDaily() {
+    const currentDate = getISTDate();
+    const lastReset = await kv.get('lastReset');
 
-        const currentDate = getISTDate();
-        if (!parsed.lastReset || parsed.lastReset !== currentDate) {
-            console.log(`Daily reset triggered. Last reset: ${parsed.lastReset}, Current: ${currentDate}`);
+    if (!lastReset || lastReset !== currentDate) {
+        console.log(`Daily reset triggered. Last reset: ${lastReset}, Current: ${currentDate}`);
 
-            if (parsed.users) {
-                Object.keys(parsed.users).forEach(userId => {
-                    parsed.users[userId].count = 0;
-                });
+        // Get all user keys and reset their counts
+        const userKeys = await kv.keys('user:*');
+        for (const key of userKeys) {
+            const user = await kv.get(key);
+            if (user) {
+                user.count = 0;
+                await kv.set(key, user);
             }
-
-            parsed.hits = [];
-            parsed.lastReset = currentDate;
-            await saveData(parsed);
         }
 
-        return parsed;
-    } catch (error) {
-        const initialData = { users: {}, hits: [], lastReset: getISTDate() };
-        await saveData(initialData);
-        return initialData;
+        // Clear hits
+        await kv.del('hits');
+        await kv.set('lastReset', currentDate);
     }
-}
-
-async function saveData(data) {
-    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
 app.post('/api/tap', async (req, res) => {
@@ -56,42 +45,56 @@ app.post('/api/tap', async (req, res) => {
             return res.status(400).json({ error: 'userId is required' });
         }
 
-        const data = await loadData();
+        await checkAndResetDaily();
 
-        if (!data.users[userId]) {
-            data.users[userId] = { count: 0, username: username || 'Anonymous' };
+        const userKey = `user:${userId}`;
+        let user = await kv.get(userKey);
+
+        if (!user) {
+            user = { count: 0, username: username || 'Anonymous' };
         }
 
         if (username) {
-            data.users[userId].username = username;
+            user.username = username;
         }
 
-        data.users[userId].count++;
+        user.count++;
+        await kv.set(userKey, user);
 
-        data.hits.push({
+        // Add to hits list (keep last 100)
+        const hit = {
             userId,
-            username: data.users[userId].username,
+            username: user.username,
             timestamp: new Date().toISOString()
-        });
+        };
 
-        if (data.hits.length > 100) {
-            data.hits = data.hits.slice(-100);
+        await kv.lpush('hits', JSON.stringify(hit));
+        await kv.ltrim('hits', 0, 99);
+
+        // Get stats for response
+        const userKeys = await kv.keys('user:*');
+        const users = {};
+        let totalTaps = 0;
+
+        for (const key of userKeys) {
+            const userData = await kv.get(key);
+            const uid = key.replace('user:', '');
+            users[uid] = userData;
+            totalTaps += userData.count;
         }
 
-        await saveData(data);
+        const totalUsers = userKeys.length;
 
-        const totalTaps = Object.values(data.users).reduce((sum, user) => sum + user.count, 0);
-        const totalUsers = Object.keys(data.users).length;
-
-        const leaderboard = Object.entries(data.users)
+        const leaderboard = Object.entries(users)
             .map(([id, user]) => ({ userId: id, username: user.username, count: user.count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
 
-        const recentHits = data.hits.slice(-20).reverse();
+        const hitsData = await kv.lrange('hits', 0, 19);
+        const recentHits = hitsData.map(h => JSON.parse(h));
 
         res.json({
-            userCount: data.users[userId].count,
+            userCount: user.count,
             totalTaps,
             totalUsers,
             leaderboard,
@@ -105,16 +108,28 @@ app.post('/api/tap', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
     try {
-        const data = await loadData();
-        const totalTaps = Object.values(data.users).reduce((sum, user) => sum + user.count, 0);
-        const totalUsers = Object.keys(data.users).length;
+        await checkAndResetDaily();
 
-        const leaderboard = Object.entries(data.users)
+        const userKeys = await kv.keys('user:*');
+        const users = {};
+        let totalTaps = 0;
+
+        for (const key of userKeys) {
+            const userData = await kv.get(key);
+            const uid = key.replace('user:', '');
+            users[uid] = userData;
+            totalTaps += userData.count;
+        }
+
+        const totalUsers = userKeys.length;
+
+        const leaderboard = Object.entries(users)
             .map(([id, user]) => ({ userId: id, username: user.username, count: user.count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
 
-        const recentHits = data.hits.slice(-20).reverse();
+        const hitsData = await kv.lrange('hits', 0, 19);
+        const recentHits = hitsData.map(h => JSON.parse(h));
 
         res.json({
             totalTaps,
@@ -128,6 +143,12 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Bong Hits Tracker running on http://localhost:${PORT}`);
-});
+// Export for Vercel
+module.exports = app;
+
+// Only start server locally (not on Vercel)
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Bong Hits Tracker running on http://localhost:${PORT}`);
+    });
+}
