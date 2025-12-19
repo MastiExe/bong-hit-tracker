@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug - Bong Hits Tracker</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #0f0;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>Debug Console</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (isError ? 'error' : 'success');
+            div.textContent = msg;
+            output.appendChild(div);
+        }
+
+        async function runDebug() {
+            log('Starting debug tests...');
+            log('Current URL: ' + window.location.href);
+            log('Current Origin: ' + window.location.origin);
+
+            // Test 1: Check if we can reach the API
+            try {
+                log('\n[Test 1] Fetching /api/stats...');
+                const res = await fetch('/api/stats');
+                log('Response status: ' + res.status);
+                log('Response headers: ' + JSON.stringify([...res.headers.entries()]));
+
+                const data = await res.json();
+                log('SUCCESS! Data received:');
+                log(JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('ERROR: ' + e.message, true);
+                log('Error stack: ' + e.stack, true);
+            }
+
+            // Test 2: Try to record a tap
+            try {
+                log('\n[Test 2] Posting to /api/tap...');
+                const res = await fetch('/api/tap', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: 'debug-test-' + Date.now(),
+                        username: 'DebugUser'
+                    })
+                });
+                log('Response status: ' + res.status);
+
+                const data = await res.json();
+                log('SUCCESS! Response:');
+                log(JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('ERROR: ' + e.message, true);
+                log('Error stack: ' + e.stack, true);
+            }
+
+            // Test 3: Check localStorage
+            log('\n[Test 3] Checking localStorage...');
+            try {
+                const userId = localStorage.getItem('bong-user-id');
+                const username = localStorage.getItem('bong-username');
+                log('User ID: ' + (userId || 'not set'));
+                log('Username: ' + (username || 'not set'));
+            } catch (e) {
+                log('ERROR accessing localStorage: ' + e.message, true);
+            }
+
+            // Test 4: Network info
+            log('\n[Test 4] Browser info...');
+            log('User Agent: ' + navigator.userAgent);
+            log('Online: ' + navigator.onLine);
+        }
+
+        runDebug();
+    </script>
+</body>
+</html>

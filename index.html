@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bong Hits Tracker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .username-display {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+        }
+
+        .tap-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .tap-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+            border: 4px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .tap-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+        }
+
+        .tap-button:active {
+            transform: scale(0.95);
+        }
+
+        .tap-count {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .tap-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .leaderboard-rank {
+            font-size: 1.5rem;
+            font-weight: 700;
+            width: 40px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .leaderboard-count {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .feed-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .feed-time {
+            opacity: 0.7;
+            font-size: 0.85rem;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: rise 2s ease-out forwards;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-200px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 400px;
+            text-align: center;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .modal-content h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1.1rem;
+            font-family: inherit;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: #e73c7e;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .modal-content button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+        }
+
+        .tap-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(15px);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tap-overlay.active {
+            display: flex;
+        }
+
+        .tap-overlay-button {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff88, #00cc88);
+            border: 6px solid white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,255,136,0.5);
+            animation: pulse 2s ease infinite;
+        }
+
+        .tap-overlay-button:active {
+            transform: scale(0.9);
+        }
+
+        .tap-overlay-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            line-height: 1.3;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .tap-overlay-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 20px 60px rgba(0,255,136,0.5);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 25px 80px rgba(0,255,136,0.7);
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .tap-button {
+                width: 180px;
+                height: 180px;
+            }
+            .tap-count {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <!-- Tap overlay for returning users -->
+    <div class="tap-overlay" id="tapOverlay">
+        <div class="tap-overlay-button" onclick="handleTapOverlayClick()">
+            <div class="tap-overlay-icon">🌿</div>
+            <div class="tap-overlay-text">TAP TO<br>RECORD HIT</div>
+        </div>
+    </div>
+
+    <div class="modal active" id="usernameModal">
+        <div class="modal-content">
+            <h2>What's your name? 🌿</h2>
+            <input type="text" id="usernameInput" placeholder="Enter your name..." maxlength="20">
+            <button onclick="setUsername()">Let's Go!</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🌿 Bong Hits Tracker</h1>
+            <div class="username-display" id="usernameDisplay" onclick="changeName()" style="cursor: pointer;" title="Click to change name">Loading...</div>
+        </div>
+
+        <div class="tap-section">
+            <svg width="120" height="120" viewBox="0 0 100 100" style="margin: 0 auto 20px; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+                <defs>
+                    <linearGradient id="bongGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgba(255,255,255,0.9);stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgba(255,255,255,0.6);stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Base -->
+                <ellipse cx="50" cy="85" rx="20" ry="8" fill="url(#bongGradient)" opacity="0.9"/>
+                <path d="M 30 85 L 35 50 L 65 50 L 70 85 Z" fill="url(#bongGradient)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+                <!-- Water line -->
+                <ellipse cx="50" cy="70" rx="16" ry="6" fill="rgba(100,200,255,0.5)"/>
+
+                <!-- Neck -->
+                <rect x="45" y="20" width="10" height="30" fill="url(#bongGradient)" stroke="rgba(255,255,255,0.3)" stroke-width="2" rx="3"/>
+
+                <!-- Mouthpiece -->
+                <ellipse cx="50" cy="20" rx="8" ry="4" fill="url(#bongGradient)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+                <!-- Bowl -->
+                <circle cx="70" cy="55" r="6" fill="rgba(50,200,50,0.7)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                <line x1="65" y1="55" x2="55" y2="55" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+
+                <!-- Smoke particles -->
+                <circle cx="48" cy="15" r="2" fill="white" opacity="0.6">
+                    <animate attributeName="cy" from="15" to="5" dur="2s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="52" cy="12" r="2" fill="white" opacity="0.6">
+                    <animate attributeName="cy" from="12" to="2" dur="2.5s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" from="0.6" to="0" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+            </svg>
+
+            <div class="tap-button" id="tapButton" onclick="recordHit()">
+                <div class="tap-count" id="userCount">0</div>
+                <div class="tap-label">your hits</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalHits">0</div>
+                <div class="stat-label">total hits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">people</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">🏆</span>
+                Leaderboard
+            </div>
+            <div id="leaderboard">
+                <div style="opacity: 0.5; text-align: center; padding: 20px;">
+                    No data yet... be the first to hit it!
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">💨</span>
+                Session Feed
+            </div>
+            <div id="sessionFeed">
+                <div style="opacity: 0.5; text-align: center; padding: 20px;">
+                    No hits recorded yet...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let username = '';
+        let userId = '';
+
+        function getUserId() {
+            let id = localStorage.getItem('bong-user-id');
+            if (!id) {
+                id = 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('bong-user-id', id);
+            }
+            return id;
+        }
+
+        function getUsername() {
+            return localStorage.getItem('bong-username') || '';
+        }
+
+        function setUsername() {
+            const input = document.getElementById('usernameInput').value.trim();
+            if (input) {
+                username = input;
+                localStorage.setItem('bong-username', username);
+
+                // Enable audio on name entry (user gesture)
+                initAudio();
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.getVoices(); // Warm up speech
+                }
+
+                localStorage.setItem('sound-enabled', 'true');
+                soundEnabled = true;
+                document.getElementById('usernameModal').classList.remove('active');
+                document.getElementById('usernameDisplay').textContent = username;
+
+                // For first time users, record immediately
+                autoRecordHit();
+            }
+        }
+
+        async function handleTapOverlayClick() {
+            // Initialize audio context (user gesture required)
+            initAudio();
+
+            // Initialize speech synthesis
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+            }
+
+            localStorage.setItem('sound-enabled', 'true');
+            soundEnabled = true;
+
+            // Hide the overlay
+            document.getElementById('tapOverlay').classList.remove('active');
+
+            // Record the hit with sound enabled
+            await autoRecordHit();
+        }
+
+        function changeName() {
+            document.getElementById('usernameInput').value = username;
+            document.getElementById('usernameModal').classList.add('active');
+            setTimeout(() => document.getElementById('usernameInput').focus(), 100);
+        }
+
+        function checkCooldown() {
+            const lastTap = localStorage.getItem('last-tap-time');
+            if (!lastTap) return true;
+
+            const timeSince = Date.now() - parseInt(lastTap);
+            const cooldown = 5000; // 5 seconds
+
+            if (timeSince < cooldown) {
+                const remaining = Math.ceil((cooldown - timeSince) / 1000);
+                showMessage(`Wait ${remaining}s before next hit!`, false);
+                return false;
+            }
+            return true;
+        }
+
+        function getOrdinalNumber(num) {
+            const special = {
+                1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th',
+                6: '6th', 7: '7th', 8: '8th', 9: '9th', 10: '10th',
+                11: '11th', 12: '12th', 13: '13th', 20: '20th',
+                21: '21st', 22: '22nd', 23: '23rd', 30: '30th',
+                50: '50th', 69: '69th', 100: '100th', 420: '420th'
+            };
+
+            if (special[num]) return special[num];
+
+            const lastDigit = num % 10;
+            const lastTwoDigits = num % 100;
+
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
+                return `${num}th`;
+            }
+
+            if (lastDigit === 1) return `${num}st`;
+            if (lastDigit === 2) return `${num}nd`;
+            if (lastDigit === 3) return `${num}rd`;
+            return `${num}th`;
+        }
+
+        function getFunExclamation(count) {
+            const exclamations = [
+                'crazzzzyy! 🔥',
+                'letsgooo! 💨',
+                'on fire! 🌿',
+                'beast mode! 💪',
+                'legendary! ⚡',
+                'unstoppable! 🚀',
+                'yasss! 👑',
+                'lit! 🔥',
+                'goated! 🐐',
+                'sheesh! 💯'
+            ];
+
+            if (count === 69) return 'niceeee! 😏';
+            if (count === 420) return 'ULTIMATE! 🌿🔥💨';
+            if (count >= 100) return 'LEGENDARY STATUS! 👑';
+            if (count >= 50) return 'ABSOLUTE MADLAD! 🔥';
+            if (count >= 20) return 'beast mode activated! 💪';
+
+            return exclamations[Math.floor(Math.random() * exclamations.length)];
+        }
+
+        function speakAnnouncement(text) {
+            if ('speechSynthesis' in window) {
+                try {
+                    // Cancel any ongoing speech
+                    speechSynthesis.cancel();
+
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.95;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    utterance.lang = 'en-IN';
+
+                    // Get voices synchronously
+                    const voices = speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        const indianVoice = voices.find(v => v.lang.includes('en-IN')) ||
+                                          voices.find(v => v.lang.includes('en-US')) ||
+                                          voices[0];
+                        if (indianVoice) {
+                            utterance.voice = indianVoice;
+                            console.log('Using voice:', indianVoice.name);
+                        }
+                    }
+
+                    speechSynthesis.speak(utterance);
+                    console.log('Speaking:', text);
+                } catch (e) {
+                    console.log('Speech failed:', e);
+                }
+            } else {
+                console.log('Speech synthesis not supported');
+            }
+        }
+
+        // Load voices on page load
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+
+        function showMessage(msg, isSuccess = true) {
+            const existing = document.getElementById('flash-message');
+            if (existing) existing.remove();
+
+            const flash = document.createElement('div');
+            flash.id = 'flash-message';
+            flash.innerHTML = msg;
+            flash.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: ${isSuccess ? 'rgba(0,255,0,0.9)' : 'rgba(255,100,0,0.9)'};
+                color: white;
+                padding: 30px 50px;
+                border-radius: 20px;
+                font-size: 1.8rem;
+                font-weight: bold;
+                z-index: 10001;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                animation: popIn 0.3s ease;
+                line-height: 1.5;
+            `;
+
+            document.body.appendChild(flash);
+
+            setTimeout(() => {
+                flash.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => flash.remove(), 300);
+            }, 3000);
+        }
+
+        async function autoRecordHit() {
+            if (!username) {
+                console.log('No username, skipping auto-record');
+                return;
+            }
+
+            if (!checkCooldown()) {
+                return;
+            }
+
+            try {
+                playSound();
+                createParticles(window.innerWidth / 2, window.innerHeight / 2);
+
+                localStorage.setItem('last-tap-time', Date.now().toString());
+
+                const response = await fetch('/api/tap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, username })
+                });
+
+                const data = await response.json();
+                updateUI(data);
+
+                const hitNum = getOrdinalNumber(data.userCount);
+                const exclamation = getFunExclamation(data.userCount);
+                const displayMsg = `🌿 <strong>${username}'s ${hitNum} hit!</strong><br>${exclamation}`;
+                const spokenMsg = `${username}'s ${hitNum} hit! ${exclamation.replace(/[🔥💨🌿💪⚡🚀👑🐐💯😏]/g, '')}`;
+
+                showMessage(displayMsg, true);
+                speakAnnouncement(spokenMsg);
+            } catch (error) {
+                console.error('Error auto-recording hit:', error);
+                showMessage('❌ Failed to record hit', false);
+            }
+        }
+
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            return audioContext;
+        }
+
+        function playSound() {
+            try {
+                const ctx = initAudio();
+
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.5);
+
+                setTimeout(() => {
+                    const bubbleOsc = ctx.createOscillator();
+                    const bubbleGain = ctx.createGain();
+
+                    bubbleOsc.connect(bubbleGain);
+                    bubbleGain.connect(ctx.destination);
+
+                    bubbleOsc.frequency.value = 100;
+                    bubbleOsc.type = 'sine';
+
+                    bubbleGain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    bubbleGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+                    bubbleOsc.start(ctx.currentTime);
+                    bubbleOsc.stop(ctx.currentTime + 0.3);
+                }, 100);
+            } catch (e) {
+                console.log('Sound failed:', e);
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.width = (Math.random() * 8 + 4) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+
+                document.getElementById('particles').appendChild(particle);
+
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        async function recordHit() {
+            if (!checkCooldown()) {
+                return;
+            }
+
+            playSound();
+
+            const button = document.getElementById('tapButton');
+            const rect = button.getBoundingClientRect();
+            createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => button.style.transform = '', 100);
+
+            try {
+                localStorage.setItem('last-tap-time', Date.now().toString());
+
+                const response = await fetch('/api/tap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, username })
+                });
+
+                const data = await response.json();
+                updateUI(data);
+
+                const hitNum = getOrdinalNumber(data.userCount);
+                const exclamation = getFunExclamation(data.userCount);
+                const displayMsg = `🌿 <strong>${username}'s ${hitNum} hit!</strong><br>${exclamation}`;
+                const spokenMsg = `${username}'s ${hitNum} hit! ${exclamation.replace(/[🔥💨🌿💪⚡🚀👑🐐💯😏]/g, '')}`;
+
+                showMessage(displayMsg, true);
+                speakAnnouncement(spokenMsg);
+            } catch (error) {
+                console.error('Error recording hit:', error);
+                showMessage('❌ Failed to record hit', false);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function updateUI(data) {
+            let myCount = data.userCount || 0;
+
+            if (!data.userCount && data.leaderboard) {
+                const myData = data.leaderboard.find(u => u.userId === userId);
+                if (myData) {
+                    myCount = myData.count;
+                }
+            }
+
+            document.getElementById('userCount').textContent = myCount;
+            document.getElementById('totalHits').textContent = data.totalTaps || 0;
+            document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+
+            if (data.leaderboard && data.leaderboard.length > 0) {
+                const leaderboardHTML = data.leaderboard.map((user, index) => {
+                    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                    const highlight = user.userId === userId ? 'style="background: rgba(255,255,255,0.25);"' : '';
+                    return `
+                        <div class="leaderboard-item" ${highlight}>
+                            <div class="leaderboard-rank">${medal}</div>
+                            <div class="leaderboard-name">${user.username || 'Anonymous'}</div>
+                            <div class="leaderboard-count">${user.count} 💨</div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('leaderboard').innerHTML = leaderboardHTML;
+            }
+
+            if (data.recentHits && data.recentHits.length > 0) {
+                const feedHTML = data.recentHits.map(hit => {
+                    const timeAgo = getTimeAgo(new Date(hit.timestamp));
+                    return `
+                        <div class="feed-item">
+                            <span>💨</span>
+                            <span>${hit.username || 'Anonymous'} took a hit</span>
+                            <span class="feed-time">${timeAgo}</span>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('sessionFeed').innerHTML = feedHTML;
+            }
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        }
+
+        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') setUsername();
+        });
+
+        userId = getUserId();
+        username = getUsername();
+
+        let soundEnabled = localStorage.getItem('sound-enabled') === 'true';
+
+        // Initialize on page load
+        if (username) {
+            // Returning user
+            document.getElementById('usernameModal').classList.remove('active');
+            document.getElementById('usernameDisplay').textContent = username;
+
+            // ALWAYS show tap overlay on page load/reload for returning users
+            // This handles the NFC reload case
+            document.getElementById('tapOverlay').classList.add('active');
+        }
+
+        loadData();
+        setInterval(loadData, 5000);
+    </script>
+</body>
+</html>

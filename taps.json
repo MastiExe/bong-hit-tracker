@@ -1,0 +1,50 @@
+{
+  "users": {
+    "user-1766175945955-2ha0fj8eg": {
+      "count": 4,
+      "username": "Raju"
+    },
+    "user-1766175952049-5bb70foay": {
+      "count": 3,
+      "username": "Mahir"
+    }
+  },
+  "hits": [
+    {
+      "userId": "user-1766175945955-2ha0fj8eg",
+      "username": "Raju",
+      "timestamp": "2025-12-19T21:10:29.527Z"
+    },
+    {
+      "userId": "user-1766175945955-2ha0fj8eg",
+      "username": "Raju",
+      "timestamp": "2025-12-19T21:11:24.377Z"
+    },
+    {
+      "userId": "user-1766175945955-2ha0fj8eg",
+      "username": "Raju",
+      "timestamp": "2025-12-19T21:11:39.152Z"
+    },
+    {
+      "userId": "user-1766175945955-2ha0fj8eg",
+      "username": "Raju",
+      "timestamp": "2025-12-19T21:11:51.821Z"
+    },
+    {
+      "userId": "user-1766175952049-5bb70foay",
+      "username": "Mahir",
+      "timestamp": "2025-12-19T21:21:08.874Z"
+    },
+    {
+      "userId": "user-1766175952049-5bb70foay",
+      "username": "Mahir",
+      "timestamp": "2025-12-19T21:21:17.682Z"
+    },
+    {
+      "userId": "user-1766175952049-5bb70foay",
+      "username": "Mahir",
+      "timestamp": "2025-12-19T21:22:34.686Z"
+    }
+  ],
+  "lastReset": "2025-12-20"
+}

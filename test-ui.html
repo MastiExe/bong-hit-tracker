@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UI Test</title>
+</head>
+<body>
+    <h1>Testing Bong Hits Tracker</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        async function test() {
+            results.innerHTML += '<p>Starting tests...</p>';
+
+            // Test 1: Load stats
+            try {
+                const statsRes = await fetch('https://deceitfully-metrizable-thu.ngrok-free.dev/api/stats');
+                const stats = await statsRes.json();
+                results.innerHTML += `<p>✅ Stats loaded: ${stats.totalTaps} hits, ${stats.totalUsers} users</p>`;
+
+                if (stats.leaderboard && stats.leaderboard.length > 0) {
+                    results.innerHTML += '<p>Leaderboard:</p><ul>';
+                    stats.leaderboard.forEach(u => {
+                        results.innerHTML += `<li>${u.username}: ${u.count} hits</li>`;
+                    });
+                    results.innerHTML += '</ul>';
+                }
+            } catch (e) {
+                results.innerHTML += `<p>❌ Error loading stats: ${e.message}</p>`;
+            }
+
+            // Test 2: Record a hit
+            try {
+                const tapRes = await fetch('https://deceitfully-metrizable-thu.ngrok-free.dev/api/tap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: 'ui-test-' + Date.now(),
+                        username: 'UITestUser'
+                    })
+                });
+                const tapData = await tapRes.json();
+                results.innerHTML += `<p>✅ Tap recorded! Total now: ${tapData.totalTaps}</p>`;
+            } catch (e) {
+                results.innerHTML += `<p>❌ Error recording tap: ${e.message}</p>`;
+            }
+
+            // Test 3: Load stats again
+            try {
+                const statsRes2 = await fetch('https://deceitfully-metrizable-thu.ngrok-free.dev/api/stats');
+                const stats2 = await statsRes2.json();
+                results.innerHTML += `<p>✅ Updated stats: ${stats2.totalTaps} hits, ${stats2.totalUsers} users</p>`;
+            } catch (e) {
+                results.innerHTML += `<p>❌ Error loading updated stats: ${e.message}</p>`;
+            }
+        }
+
+        test();
+    </script>
+</body>
+</html>
